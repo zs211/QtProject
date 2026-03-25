@@ -11,6 +11,9 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     // 找到输入框（确保ui里输入框的对象名是 lineEdit）
     input = ui->lineEdit; // 替换原来的 findChild，更稳定
+    // 初始化网络管理器（关键！）
+    networkManager = new QNetworkAccessManager(this);
+
 
     // 1. 初始化数据库（程序启动时自动执行）
     if (!initSQLiteDB()) {
@@ -18,6 +21,10 @@ MainWindow::MainWindow(QWidget *parent)
     }
     // 4. 程序启动时自动加载历史记录
     loadHistoryRecords();
+
+    // 绑定信号槽（固定写法）
+    connect(networkManager, &QNetworkAccessManager::finished,
+            this, &MainWindow::onNetworkReplyFinished);
 }
 
 MainWindow::~MainWindow()
@@ -308,4 +315,44 @@ void MainWindow::on_pushButton_export_csv_clicked()
     if (exportRecords(filePath, "csv")) {
         QMessageBox::information(this, "导出成功", "记录已导出到：\n" + filePath);
     }
+}
+
+
+
+
+
+// ==============================
+// 【新增】点击按钮：访问百度
+// ==============================
+void MainWindow::on_pushButton_4_clicked()
+{
+    // 访问百度（永远可用）
+    QUrl url("https://www.baidu.com");
+    QNetworkRequest request(url);
+
+    // 发送GET请求（就这一句！）
+    networkManager->get(request);
+
+    ui->textEdit->setText("正在请求网络...");
+}
+
+// ==============================
+// 【新增】网络响应（固定模板）
+// ==============================
+void MainWindow::onNetworkReplyFinished(QNetworkReply *reply)
+{
+    if (reply->error()) {
+        ui->textEdit->setText("网络错误：" + reply->errorString());
+        reply->deleteLater();
+        return;
+    }
+
+    // 读取数据
+    QByteArray data = reply->readAll();
+    QString result = QString::fromUtf8(data);
+
+    // 显示到界面
+    ui->textEdit->setText(result);
+
+    reply->deleteLater();
 }

@@ -11,7 +11,15 @@
 #include <QFile>        // 文件操作
 #include <QFileDialog>  // 文件保存对话框
 #include <QTextStream>  // 文本流
-
+// 新增网络相关头文件
+#include <QNetworkAccessManager>
+#include <QNetworkRequest>
+#include <QNetworkReply>
+#include <QJsonDocument>   // JSON解析
+#include <QJsonObject>
+#include <QJsonArray>
+#include <QUrl>
+#include <QUrlQuery>
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
 QT_END_NAMESPACE
@@ -65,10 +73,17 @@ private slots:
     void on_pushButton_export_csv_clicked();
 
 
+
+    void on_pushButton_4_clicked();     // 【新增】获取网页按钮
+    void onNetworkReplyFinished(QNetworkReply *reply); // 【新增】网络响应
+
+
 private:
     Ui::MainWindow *ui;
     QLineEdit *input; // 输入框指针
     QSqlDatabase db; // 新增：数据库对象
+    // 新增网络管理器（全局唯一，避免重复创建）
+    QNetworkAccessManager *networkManager;
 };
 
 #endif // MAINWINDOW_H
