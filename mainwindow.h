@@ -4,7 +4,9 @@
 #include <QMainWindow>
 #include <QLineEdit>
 #include <QMessageBox>
-#include "subwindow.h" // 引入子窗口头文件
+#include <QSqlDatabase>  // 新增：数据库头文件
+#include <QSqlQuery>     // 新增：SQL 查询头文件
+#include <QSqlError>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -17,6 +19,8 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+    // 新增：初始化数据库函数
+    bool initSQLiteDB();
 
 private slots:
     // 以下槽函数名必须和按钮对象名完全匹配
@@ -37,6 +41,7 @@ private slots:
 private:
     Ui::MainWindow *ui;
     QLineEdit *input; // 输入框指针
+    QSqlDatabase db; // 新增：数据库对象
 };
 
 #endif // MAINWINDOW_H

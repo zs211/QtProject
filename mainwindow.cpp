@@ -1,6 +1,8 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QMessageBox>
+#include "subwindow.h"
+
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -9,21 +11,68 @@ MainWindow::MainWindow(QWidget *parent)
     ui->setupUi(this);
     // 找到输入框（确保ui里输入框的对象名是 lineEdit）
     input = ui->lineEdit; // 替换原来的 findChild，更稳定
+
+    // 1. 初始化数据库（程序启动时自动执行）
+    if (!initSQLiteDB()) {
+        QMessageBox::critical(this, "数据库错误", "SQLite 初始化失败！");
+    }
 }
 
 MainWindow::~MainWindow()
 {
+    // 关闭数据库连接
+    if (db.isOpen()) {
+        db.close();
+    }
     delete ui;
 }
+// 新增：初始化 SQLite 数据库
+bool MainWindow::initSQLiteDB()
+{
+    // 1. 添加 SQLite 数据库驱动
+    db = QSqlDatabase::addDatabase("QSQLITE");
+    // 2. 设置数据库文件路径（程序目录下的 data.db，自动创建）
+    db.setDatabaseName("data.db");
 
+    // 3. 打开数据库
+    if (!db.open()) {
+        QMessageBox::warning(this, "数据库错误", "打开失败：" + db.lastError().text());
+        return false;
+    }
+
+    // 4. 创建表（用户输入记录表）
+    QSqlQuery query;
+    QString createSql = "CREATE TABLE IF NOT EXISTS input_record ("
+                        "id INTEGER PRIMARY KEY AUTOINCREMENT,"  // 自增ID
+                        "content TEXT NOT NULL,"                 // 输入内容
+                        "create_time DATETIME DEFAULT CURRENT_TIMESTAMP)"; // 时间戳
+
+    if (!query.exec(createSql)) {
+        QMessageBox::warning(this, "建表错误", query.lastError().text());
+        return false;
+    }
+
+    return true;
+}
 // 确认按钮逻辑
 void MainWindow::on_pushButton_clicked()
 {
     QString content = input->text();
     if (content.isEmpty()) {
         QMessageBox::warning(this, "警告", "输入框内容不能为空！");
+        return;
+    }
+
+    // 插入数据到 SQLite
+    QSqlQuery query;
+    // 预处理 SQL（防止 SQL 注入，更安全）
+    query.prepare("INSERT INTO input_record (content) VALUES (:content)");
+    query.bindValue(":content", content);
+
+    if (query.exec()) {
+        QMessageBox::information(this, "成功", "内容已保存！\n你输入的是：\n" + content);
     } else {
-        QMessageBox::information(this, "输入内容", "你输入的是：\n" + content);
+        QMessageBox::critical(this, "存储失败", query.lastError().text());
     }
 }
 
